@@ -13,19 +13,35 @@
 # limitations under the License.
 
 import webapp2, json, urllib2
-from riotwatcher import RiotWatcher
 
 api = "RGAPI-39baa1e6-4f95-4875-9d97-c5ff7ff7e89b"
+
+class RiotAPI():
+    def getSummoner(self, summoner):
+        request = "https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/Forrest%20the%20Fast?api_key=" + api
+        try:
+            contents = urllib2.urlopen(request).read()
+            # print("Contents: " + str(contents))
+            # data = json.dumps(contents, ensure_ascii=False, encoding='utf8')
+            data = json.loads(contents)
+            # print("Data " + json.dumps(data))
+            # print("Name " + str(data['name']))
+            return data
+        except Exception as err:
+            print(err)
 
 class ReqPage(webapp2.RequestHandler):
     def get(self):
         try:
             query = self.request.GET['summoner']
-            print(query)
-            request = "https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/"+ query +"?api_key=" + api
+
+            # gets data
+            riot = RiotAPI()
+            contents = riot.getSummoner(query)
+
+            # Writes out stuff
             self.response.headers['Content-Type'] = 'application/json;charset=utf-8'
-            contents = urllib2.urlopen(request).read()
-            self.response.write(contents)
+            self.response.write(json.dumps(contents, indent=4, sort_keys=True))
         except Exception as err:
             print(err)
             self.response.write("Oops something went wrong </br>" + str(err))
@@ -33,18 +49,15 @@ class ReqPage(webapp2.RequestHandler):
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
-        '''
-        watcher = RiotWatcher('RGAPI-39baa1e6-4f95-4875-9d97-c5ff7ff7e89b')
-        my_region = 'NA1'
-        me = watcher.summoner.by_name(my_region, 'Forrest the Fast')
-        my_ranked_stats = watcher.league.positions_by_summoner(my_region, me['id'])
-        '''
-        request = "https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/Forrest%20the%20Fast?api_key=" + api
-        print(request)
         try:
-            self.response.headers['Content-Type'] = 'application/json;charset=utf-8'   
-            contents = urllib2.urlopen(request).read()
-            self.response.write(contents)
+            # Requests API Stuff
+            riot = RiotAPI()
+            contents = riot.getSummoner("Forrest the Fast")
+            # print(contents)
+
+            # Writes out stuff
+            self.response.headers['Content-Type'] = 'application/json;charset=utf-8'
+            self.response.write(json.dumps(contents, indent=4, sort_keys=True))
         except Exception as err:
             print(err)
             self.response.write("Oops something went wrong </br>" + str(err))
