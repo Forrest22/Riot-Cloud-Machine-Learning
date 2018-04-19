@@ -13,50 +13,47 @@
 # limitations under the License.
 
 import webapp2, json, urllib2
-import logging
-import os
-import cloudstorage as gcs
-import webapp2
+from riotwatcher import RiotWatcher
 
-from google.appengine.api import app_identity
+api = "RGAPI-39baa1e6-4f95-4875-9d97-c5ff7ff7e89b"
 
-def get(self):
-  bucket_name = os.environ.get('BUCKET_NAME',
-                               app_identity.get_default_gcs_bucket_name())
+class ReqPage(webapp2.RequestHandler):
+    def get(self):
+        try:
+            query = self.request.GET['summoner']
+            print(query)
+            request = "https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/"+ query +"?api_key=" + api
+            self.response.headers['Content-Type'] = 'application/json;charset=utf-8'
+            contents = urllib2.urlopen(request).read()
+            self.response.write(contents)
+        except Exception as err:
+            print(err)
+            self.response.write("Oops something went wrong </br>" + str(err))
 
-  self.response.headers['Content-Type'] = 'text/plain'
-  self.response.write('Demo GCS Application running from Version: '
-                      + os.environ['CURRENT_VERSION_ID'] + '\n')
-  self.response.write('Using bucket name: ' + bucket_name + '\n\n')
-
-def create_file(self, filename):
-  """Create a file.
-
-  The retry_params specified in the open call will override the default
-  retry params for this particular file handle.
-
-  Args:
-    filename: filename.
-  """
-  self.response.write('Creating file %s\n' % filename)
-
-  write_retry_params = gcs.RetryParams(backoff_factor=1.1)
-  gcs_file = gcs.open(filename,
-                      'w',
-                      content_type='text/plain',
-                      options={'x-goog-meta-foo': 'foo',
-                               'x-goog-meta-bar': 'bar'},
-                      retry_params=write_retry_params)
-  gcs_file.write('abcde\n')
-  gcs_file.write('f'*1024*4 + '\n')
-  gcs_file.close()
-  self.tmp_filenames_to_clean_up.append(filename)
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
+        '''
+        watcher = RiotWatcher('RGAPI-39baa1e6-4f95-4875-9d97-c5ff7ff7e89b')
+        my_region = 'NA1'
+        me = watcher.summoner.by_name(my_region, 'Forrest the Fast')
+        my_ranked_stats = watcher.league.positions_by_summoner(my_region, me['id'])
+        '''
+        request = "https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/Forrest%20the%20Fast?api_key=" + api
+        print(request)
+        try:
+            self.response.headers['Content-Type'] = 'application/json;charset=utf-8'   
+            contents = urllib2.urlopen(request).read()
+            self.response.write(contents)
+        except Exception as err:
+            print(err)
+            self.response.write("Oops something went wrong </br>" + str(err))
+
+class DataPage(webapp2.RequestHandler):
+    def get(self):
         # self.response.headers['Content-Type'] = 'text/plain'
         self.response.headers['Content-Type'] = 'application/json;charset=utf-8'   
-        api = "RGAPI-61e2a1c6-837c-44ad-b828-59ea4a29d7e5"
+        '''
         request = "https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/Forrest%20the%20Fast?api_key=" + api
         request = "https://s3-us-west-1.amazonaws.com/riot-developer-portal/seed-data/matches1.json"
         try:
@@ -69,9 +66,14 @@ class MainPage(webapp2.RequestHandler):
             self.response.write(err)
             print("error")
 
-
+        self.response.write('Listbucket result:\n')
+        '''
+        with open('matchdata1.json') as file:
+            self.response.write(file.read())
 
 
 app = webapp2.WSGIApplication([
     ('/', MainPage),
+    ('/data', DataPage),
+    ('/request', ReqPage)
 ], debug=True)
